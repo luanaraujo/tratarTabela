@@ -1,0 +1,39 @@
+.btn-download {
+    display: inline-flex;
+    font-family: "Source Sans Pro", sans-serif;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    font-weight: 400;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    min-height: 38.4px;
+    margin: 0px;
+    line-height: 1.6;
+    color: #ffffff;
+    width: auto;
+    user-select: none;
+    background-color: rgb(19, 23, 32);
+    border: 1px solid rgba(250, 250, 250, 0.2);
+}
+
+
+.btn-download.clicked:hover {
+    border-color: rgb(92, 0, 0);
+    color: rgb(255, 255, 255);
+    background-color: rgb(92, 0, 0);
+
+}
+
+.btn-download.clicked {
+    background-color: rgb(255, 75, 75);
+    border-color: rgb(255, 75, 75);
+    color: #ffffff;
+}
+
+.st.image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
