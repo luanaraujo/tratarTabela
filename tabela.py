@@ -5,7 +5,7 @@ import re
 import locale
 from openpyxl import load_workbook
 
-# Interface Streamlit
+# Cria a interface Streamlit
 st.set_page_config(page_title='Tratador de Tabelas', page_icon='img/icone.ico')
 
 # Importa o arquivo CSS
@@ -32,7 +32,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Configuração da formatação de moeda
+# Define o local como pt-BR pra formatar os valores como R$
 locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 # Caminho do arquivo CSV da tabela base
@@ -176,7 +176,7 @@ def format_currency(value):
 
 
 st.image('img/tabela.png', width=250)
-st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento e do valor que você quer usar, estão com o título escrito da forma correta, assim: "código" ou "codigo" e "valor". ')
+st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento e do valor que você quer usar, estão com o título escrito da forma correta, assim: "código" ou "codigo" e "valor". ', icon="🚨")
 
 
 # Solicita o caminho do arquivo Excel
