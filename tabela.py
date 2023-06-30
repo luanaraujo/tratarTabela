@@ -41,72 +41,93 @@ caminho_tabela_base = 'teste/base.csv'
 # Carrega a tabela base em um DataFrame
 df_base = pd.read_csv(caminho_tabela_base, sep=';', quoting=1)
 
+# Cria uma tabela final vazia
+df_final = pd.DataFrame()
+
+
 # Função para tratar a tabela
-
-
 def tratar_tabela(caminho_arquivo):
+
+    global df_final  # Declarando a variável df_final como global
 
     if caminho_arquivo is None:
         st.warning('Nenhum arquivo selecionado.')
         return
 
     # Carrega o arquivo Excel em um DataFrame
-    xls = pd.ExcelFile(caminho_arquivo)
+    try:
+        df = pd.read_excel(caminho_arquivo)
+    except Exception as e:
+        st.warning(f"Erro ao carregar o arquivo: {str(e)}")
+        return
 
-    # Lista todas as abas da planilha
-    abas = xls.sheet_names
+    # Verifica se o DataFrame está vazio
+    if df.empty:
+        st.warning('O arquivo selecionado está vazio.')
+        return
 
-    # Cria um DataFrame vazio para armazenar os dados tratados
+    # Seleciona as colunas desejadas
+    colunas = list(df.columns)
+    colunas_selecionadas = st.multiselect(
+        'Selecione as colunas desejadas', colunas, format_func=lambda x: x, default=[])
+
+    # Verifica se alguma coluna foi selecionada
+    if len(colunas_selecionadas) == 0:
+        st.warning('Nenhuma coluna selecionada.')
+        return
+
+    # Lista de palavras-chave para identificar as colunas de código e valor
+    palavras_chave_codigo = ['codigo', 'código', 'code']
+    palavras_chave_valor = ['valor', 'preco', 'price']
+
+    # Busca a coluna de código
+    coluna_codigo = next(
+        (col for col in colunas_selecionadas if any(keyword in col.lower() for keyword in palavras_chave_codigo)), None)
+
+    # Busca a coluna de valor
+    coluna_valor = next(
+        (col for col in colunas_selecionadas if any(keyword in col.lower() for keyword in palavras_chave_valor)), None)
+
+    # Verifica se as colunas de código e valor foram encontradas
+    if coluna_codigo is None or coluna_valor is None:
+        st.warning('Colunas de código ou valor não encontradas.')
+        return
+
+    # Ignora as linhas vazias nas colunas selecionadas
+    df = df.dropna(subset=[coluna_codigo, coluna_valor], how='all')
+
+    # Cria uma cópia da tabela base com as colunas atualizadas
+    df_base_atualizada = df_base.copy()
+    df_base_atualizada['código'] = df[coluna_codigo].apply(
+        lambda x: re.sub(r'\D', '', str(x)) if pd.notnull(x) else '')
+    df_base_atualizada['ch'] = df[coluna_valor].apply(
+        lambda x: format_currency(x) if pd.notnull(x) else '')
+
+    # Cria uma tabela final combinando a tabela base atualizada com as colunas adicionais
     df_final = pd.DataFrame()
+    df_final['código'] = df_base_atualizada['código']
+    df_final['ch'] = df_base_atualizada['ch']
+    df_final['índice'] = 0
+    df_final['porte'] = 'UNIL'
+    df_final['filme'] = 0
+    df_final['mnemonico'] = ''
+    df_final['efetua'] = 'S'
+    df_final['vlrporte'] = 1
 
-    for aba in abas:
-        # Lê a aba atual em um DataFrame
-        df = pd.read_excel(caminho_arquivo, sheet_name=aba)
+    # Exclui as linhas não atualizadas da tabela final
+    df_final = df_final.dropna(subset=['código'])
 
-        # Verifica se o DataFrame está vazio
-        if df.empty:
-            st.warning(f'A aba "{aba}" do arquivo selecionado está vazia.')
-            continue
+    # Remove espaços extras dos códigos
+    df_final['código'] = df_base_atualizada['código'].astype(
+        str).str.rstrip('0').str.ljust(8, '0')
 
-        # Seleciona as colunas desejadas
-        colunas = list(df.columns)
-        colunas_selecionadas = st.multiselect(
-            f'Selecione as colunas desejadas para a aba "{aba}"', colunas, format_func=lambda x: x, default=[])
+    # Preenche as linhas vazias com os valores padrão
+    df_final = df_final.fillna(
+        value={'índice': 0, 'porte': 'UNIL', 'filme': 0, 'mnemonico': '', 'efetua': 'S', 'vlrporte': 1})
 
-        # Verifica se alguma coluna foi selecionada
-        if len(colunas_selecionadas) == 0:
-            st.warning(f'Nenhuma coluna selecionada para a aba "{aba}".')
-            continue
-
-        # Verifica as variações de nomes das colunas de código e valor
-        coluna_codigo = None
-        coluna_valor = None
-        for col in colunas_selecionadas:
-            if 'codigo' in col.lower():
-                coluna_codigo = col
-            elif 'valor' in col.lower():
-                coluna_valor = col
-
-        # Verifica se as colunas de código e valor foram encontradas
-        if coluna_codigo is None or coluna_valor is None:
-            st.warning(
-                f'Colunas de código ou valor não encontradas para a aba "{aba}".')
-            continue
-
-        # Filtra as linhas que não estão vazias nas colunas selecionadas
-        df = df.dropna(subset=[coluna_codigo, coluna_valor])
-
-        # Atualiza as colunas "código" e "ch" da tabela base
-        df_base['código'] = df[coluna_codigo].apply(
-            lambda x: re.sub(r'\D', '', str(x)) if pd.notnull(x) else '')
-        df_base['ch'] = df[coluna_valor].apply(
-            lambda x: format_currency(x) if pd.notnull(x) else '')
-
-        # Cria uma cópia da tabela base com as colunas atualizadas
-        df_tratado = df_base.copy()
-
-        # Adiciona os dados tratados à tabela final
-        df_final = pd.concat([df_final, df_tratado])
+    # Mostra o DataFrame tratado
+    st.subheader('Tabela Tratada')
+    st.dataframe(df_final)
 
     # Verifica se a tabela final está vazia
     if df_final.empty:
@@ -119,7 +140,7 @@ def tratar_tabela(caminho_arquivo):
     href = f'<a href="data:file/csv;base64,{b64}" download="arquivo_tratado.csv" class="btn-download clicked">Baixar Tabela Tratada</a>'
 
     st.markdown(href, unsafe_allow_html=True)
-    st.write('Tabela tratada gerada com sucesso!')
+
 
 # Função para formatar o valor da coluna "ch"
 
