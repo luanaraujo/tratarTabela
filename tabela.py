@@ -33,7 +33,7 @@ st.markdown(
 )
 
 # Configuração da formatação de moeda
-locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 # Caminho do arquivo CSV da tabela base
 caminho_tabela_base = 'teste/base.csv'
