@@ -39,7 +39,7 @@ locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 caminho_tabela_base = 'teste/base.csv'
 
 # Carrega a tabela base em um DataFrame
-df_base = pd.read_csv(caminho_tabela_base, sep=';', quoting=1)
+df_base = pd.read_csv(caminho_tabela_base, sep=';', quoting=0)
 
 # Cria uma tabela final vazia
 df_final = pd.DataFrame()
@@ -106,9 +106,9 @@ def tratar_tabela(caminho_arquivo):
     # Cria uma tabela final combinando a tabela base atualizada com as colunas adicionais
     df_final = pd.DataFrame()
     df_final['código'] = df_base_atualizada['código']
-    df_final['ch'] = df_base_atualizada['ch']
     df_final['índice'] = 0
     df_final['porte'] = 'UNIL'
+    df_final['ch'] = df_base_atualizada['ch']
     df_final['filme'] = 0
     df_final['mnemonico'] = ''
     df_final['efetua'] = 'S'
@@ -135,7 +135,7 @@ def tratar_tabela(caminho_arquivo):
         return
 
     # Codifica o DataFrame tratado em CSV para download
-    csv = df_final.to_csv(sep=';', quoting=1, index=False)
+    csv = df_final.to_csv(sep=';', quoting=0, index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="arquivo_tratado.csv" class="btn-download clicked">Baixar Tabela Tratada</a>'
 
