@@ -176,6 +176,8 @@ def format_currency(value):
 
 
 st.image('img/tabela.png', width=250)
+st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento e do valor que você quer usar, estão com o título escrito da forma correta, assim: "código" ou "codigo" e "valor". ')
+
 
 # Solicita o caminho do arquivo Excel
 caminho_arquivo = st.file_uploader(
