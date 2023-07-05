@@ -32,7 +32,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Define o local como pt-BR pra formatar os valores como R$
+# Define o local como pt-BR para formatar os valores como R$
 locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 # Caminho do arquivo CSV da tabela base
@@ -41,8 +41,7 @@ caminho_tabela_base = 'teste/base.csv'
 # Carrega a tabela base em um DataFrame
 df_base = pd.read_csv(caminho_tabela_base, sep=';', quoting=0)
 
-# Cria uma tabela final vazia
-df_final = pd.DataFrame()
+# Função para tratar a tabela
 
 
 # Função para tratar a tabela
@@ -69,7 +68,7 @@ def tratar_tabela(caminho_arquivo):
         return
 
     # Cria uma tabela final vazia
-    df_final = pd.DataFrame()
+    df_final = pd.DataFrame(columns=['código','Índice', 'Porte', 'ch', 'Filme', 'mnemônico',  'Efetua',  'VlrPorte'])
 
     # Itera sobre cada aba e processa os dados de cada uma
     for nome_aba in nomes_abas:
@@ -91,60 +90,71 @@ def tratar_tabela(caminho_arquivo):
             st.warning('Nenhuma coluna selecionada.')
             return
 
-        # Lista de palavras-chave para identificar as colunas de código e valor
-        palavras_chave_codigo = ['codigo', 'código', 'code']
-        palavras_chave_valor = ['valor', 'preco', 'price']
+        # Lista de palavras-chave para identificar as colunas de código, mnemônico e valor
+        palavras_chave_codigo = ['codigo', 'código', 'CODIGO']
+        palavras_chave_mnemonico = ['mnemonico', 'mnemônico', 'MNEMONICO']
+        palavras_chave_valor = ['valor', 'VALOR']
 
         # Busca a coluna de código
         coluna_codigo = next(
             (col for col in colunas_selecionadas if any(keyword in col.lower() for keyword in palavras_chave_codigo)), None)
 
+        # Busca a coluna de mnemônico
+        coluna_mnemonico = next(
+            (col for col in colunas_selecionadas if any(keyword in col.lower() for keyword in palavras_chave_mnemonico)), None)
+
         # Busca a coluna de valor
         coluna_valor = next(
             (col for col in colunas_selecionadas if any(keyword in col.lower() for keyword in palavras_chave_valor)), None)
 
-        # Verifica se as colunas de código e valor foram encontradas
-        if coluna_codigo is None or coluna_valor is None:
-            st.warning('Colunas de código ou valor não encontradas.')
-            return
+        # Trata os dados da tabela base de acordo com as colunas selecionadas
+        df_base_atualizada = pd.DataFrame()
 
-        # Ignora as linhas vazias nas colunas selecionadas
-        df = df.dropna(subset=[coluna_codigo, coluna_valor], how='all')
+        if coluna_codigo is not None:
+            df_base_atualizada['código'] = df[coluna_codigo].astype(str).str.extract(r'(\d+)')
+        else:
+            df_base_atualizada['código'] = ''
 
-        # Cria uma cópia da tabela base com as colunas atualizadas
-        df_base_atualizada = df_base.copy()
-        df_base_atualizada.dropna(subset=['código'], inplace=True)
+        if coluna_mnemonico is not None:
+            if coluna_codigo is None:
+                df_base_atualizada['código'] = ''
+            df_base_atualizada['mnemônico'] = df[coluna_mnemonico]
+        else:
+            if coluna_codigo is None:
+                df_base_atualizada['código'] = ''
 
-        df_base_atualizada['código'] = df[coluna_codigo].apply(
-            lambda x: re.sub(r'\D', '', str(x)) if pd.notnull(x) else '')
-        df_base_atualizada['ch'] = df[coluna_valor].apply(
-            lambda x: format_currency(x) if pd.notnull(x) else '')
+        if coluna_valor is not None:
+            df_base_atualizada['ch'] = df[coluna_valor].apply(
+                lambda x: format_currency(x) if pd.notnull(x) else '')
+
+        # Renomeia as colunas padrão
+        colunas_padrao = ['Índice', 'Porte', 'código', 'mnemônico', 'Filme', 'Efetua', 'ch', 'VlrPorte']
+        for col in colunas_padrao:
+            if col not in df_base_atualizada.columns:
+                df_base_atualizada[col] = None
+
+        # Preenche as colunas padrão com os valores fornecidos
+        df_base_atualizada['Índice'] = 0
+        df_base_atualizada['Porte'] = 'UNIL'
+        df_base_atualizada['Filme'] = 0
+        df_base_atualizada['Efetua'] = 'S'
+        df_base_atualizada['VlrPorte'] = 1
 
         # Adiciona os dados da aba atual na tabela final
-        df_final = pd.concat([df_final, df_base_atualizada], ignore_index=True)
+        df_final = pd.concat([df_final, df_base_atualizada[['código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico', 'Efetua', 'VlrPorte']]], ignore_index=True)
+
 
     # Remove os 0 a mais que possam ser adicionados nos códigos
-    df_final['código'] = df_final['código'].astype(
-        str).str.rstrip('0').str.ljust(8, '0')
+    if 'código' in df_final.columns:
+        df_final['código'] = df_final['código'].astype(str).str.rstrip('0').str.ljust(8, '0').replace('nan00000', '')
+    else:
+        df_final['código'] = None
 
-    # Cria uma tabela final combinando a tabela base atualizada com as colunas adicionais
-    df_final['índice'] = 0
-    df_final['porte'] = 'UNIL'
-    df_final['filme'] = 0
-    df_final['mnemonico'] = ''
-    df_final['efetua'] = 'S'
-    df_final['vlrporte'] = 1
 
-    # Exclui as linhas vazias da tabela final
-    df_final = df_final.dropna(subset=['código'])
+    # Remove linhas totalmente vazias da tabela final
+    df_final = df_final.dropna(how='all', subset=['código', 'mnemônico', 'ch']).reset_index(drop=True)
 
-    # Preenche as linhas vazias das outras colunas com os valores padrão
-    df_final = df_final.fillna(
-        value={'índice': 0, 'porte': 'UNIL', 'filme': 0, 'mnemonico': '', 'efetua': 'S', 'vlrporte': 1})
-    df_final = df_final.dropna(
-        subset=['código'], how='all').reset_index(drop=True)
-
-    # Mostra um preview DataFrame tratado
+    # Mostra um preview do DataFrame tratado
     st.subheader('Tabela Tratada')
     st.dataframe(df_final)
 
@@ -160,7 +170,6 @@ def tratar_tabela(caminho_arquivo):
 
     st.markdown(href, unsafe_allow_html=True)
 
-
 # Função para formatar o valor da coluna "ch", tirando as letras e $, e com 2 casas decimais
 def format_currency(value):
     if pd.notnull(value):
@@ -174,10 +183,14 @@ def format_currency(value):
             pass
     return value
 
+# Chama a função para aplicar o estilo
+local_css('style.css')
+
+# Define o local como pt-BR para formatar os valores como R$
+locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 st.image('img/tabela.png', width=250)
-st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento e do valor que você quer usar, estão com o título escrito da forma correta, assim: "código" ou "codigo" e "valor". ', icon="🚨")
-
+st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento, do valor que você quer usar e do mnemônico (caso tenha) estão com os títulos escritos corretamente, assim: "código" ou "codigo", "valor", "mnemonico" ou "mnemônico"', icon="🚨")
 
 # Solicita o caminho do arquivo Excel
 caminho_arquivo = st.file_uploader(
