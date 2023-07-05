@@ -111,7 +111,7 @@ def tratar_tabela(caminho_arquivo):
         df_base_atualizada = pd.DataFrame()
 
         if coluna_codigo is not None:
-            df_base_atualizada['código'] = df[coluna_codigo].astype(str).str.extract(r'(\d+)')
+            df_base_atualizada['código'] = df[coluna_codigo].astype(str).str.replace(r'\D+', '', regex=True)
         else:
             df_base_atualizada['código'] = ''
 
@@ -139,6 +139,9 @@ def tratar_tabela(caminho_arquivo):
         df_base_atualizada['Filme'] = 0
         df_base_atualizada['Efetua'] = 'S'
         df_base_atualizada['VlrPorte'] = 1
+
+        
+
 
         # Adiciona os dados da aba atual na tabela final
         df_final = pd.concat([df_final, df_base_atualizada[['código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico', 'Efetua', 'VlrPorte']]], ignore_index=True)
