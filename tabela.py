@@ -10,14 +10,10 @@ st.set_page_config(page_title='Tratador de Tabelas', page_icon='img/icone.ico')
 
 # Importa o arquivo CSS
 
-
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-
-# Chama a função para aplicar o estilo
-local_css('style.css')
 
 # código JavaScript para controlar o clique do botão de download
 st.markdown(
@@ -32,8 +28,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Define o local como pt-BR para formatar os valores como R$
-locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 # Caminho do arquivo CSV da tabela base
 caminho_tabela_base = 'teste/base.csv'
@@ -41,12 +35,10 @@ caminho_tabela_base = 'teste/base.csv'
 # Carrega a tabela base em um DataFrame
 df_base = pd.read_csv(caminho_tabela_base, sep=';', quoting=0)
 
-# Função para tratar a tabela
-
 
 # Função para tratar a tabela
 def tratar_tabela(caminho_arquivo):
-    global df_final  # Declarando a variável df_final como global
+    global df_final  # Declara a variável df_final como global
 
     if caminho_arquivo is None:
         st.warning('Nenhum arquivo selecionado.')
@@ -67,7 +59,7 @@ def tratar_tabela(caminho_arquivo):
         st.warning('Nenhuma aba encontrada no arquivo.')
         return
 
-    # Cria uma tabela final vazia
+    # Cria uma tabela final com as colunas bases
     df_final = pd.DataFrame(columns=['código','Índice', 'Porte', 'ch', 'Filme', 'mnemônico',  'Efetua',  'VlrPorte'])
 
     # Itera sobre cada aba e processa os dados de cada uma
@@ -133,17 +125,15 @@ def tratar_tabela(caminho_arquivo):
             if col not in df_base_atualizada.columns:
                 df_base_atualizada[col] = None
 
-        # Preenche as colunas padrão com os valores fornecidos
+        # Preenche as colunas base com os valores padrão
         df_base_atualizada['Índice'] = 0
         df_base_atualizada['Porte'] = 'UNIL'
         df_base_atualizada['Filme'] = 0
         df_base_atualizada['Efetua'] = 'S'
-        df_base_atualizada['VlrPorte'] = 1
-
-        
+        df_base_atualizada['VlrPorte'] = 1      
 
 
-        # Adiciona os dados da aba atual na tabela final
+        # Adiciona os dados da tabela base atualizada na tabela final
         df_final = pd.concat([df_final, df_base_atualizada[['código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico', 'Efetua', 'VlrPorte']]], ignore_index=True)
 
 
@@ -154,7 +144,7 @@ def tratar_tabela(caminho_arquivo):
         df_final['código'] = None
 
 
-    # Remove linhas totalmente vazias da tabela final
+    # Remove linhas vazias da tabela final
     df_final = df_final.dropna(how='all', subset=['código', 'mnemônico', 'ch']).reset_index(drop=True)
 
     # Mostra um preview do DataFrame tratado
@@ -171,9 +161,10 @@ def tratar_tabela(caminho_arquivo):
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="arquivo_tratado.csv" class="btn-download clicked">Baixar Tabela Tratada</a>'
 
+    # Permite a adição e execução de códigos que não sejam python
     st.markdown(href, unsafe_allow_html=True)
 
-# Função para formatar o valor da coluna "ch", tirando as letras e $, e com 2 casas decimais
+# Função para formatar o valor da coluna "ch", tirando as letras, $ e com 2 casas decimais
 def format_currency(value):
     if pd.notnull(value):
         value = str(value)
@@ -193,11 +184,11 @@ local_css('style.css')
 locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 st.image('img/tabela.png', width=250)
-st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento, do valor que você quer usar e do mnemônico (caso tenha) estão com os títulos escritos corretamente, assim: "código" ou "codigo", "valor", "mnemonico" ou "mnemônico"', icon="🚨")
+st.info('Antes de selecionar o arquivo, certifique-se de que as colunas dos códigos de procedimento, do valor que você quer usar e do mnemônico (caso tenha) estão com os títulos (1ª Linha) escritos corretamente, assim: "código" ou "codigo", "valor", "mnemonico" ou "mnemônico"', icon="🚨")
 
 # Solicita o caminho do arquivo Excel
 caminho_arquivo = st.file_uploader(
-    'Selecione o arquivo Excel', type=['xls', 'xlsx'])
+    'Selecione o arquivo Excel', type=['xlsx'])
 
 # Trata a tabela
 tratar_tabela(caminho_arquivo)
