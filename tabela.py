@@ -10,6 +10,7 @@ st.set_page_config(page_title='Tratador de Tabelas', page_icon='img/icone.ico')
 
 # Importa o arquivo CSS
 
+
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -60,7 +61,8 @@ def tratar_tabela(caminho_arquivo):
         return
 
     # Cria uma tabela final com as colunas bases
-    df_final = pd.DataFrame(columns=['código','Índice', 'Porte', 'ch', 'Filme', 'mnemônico',  'Efetua',  'VlrPorte'])
+    df_final = pd.DataFrame(columns=[
+                            'código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico',  'Efetua',  'VlrPorte'])
 
     # Itera sobre cada aba e processa os dados de cada uma
     for nome_aba in nomes_abas:
@@ -103,7 +105,8 @@ def tratar_tabela(caminho_arquivo):
         df_base_atualizada = pd.DataFrame()
 
         if coluna_codigo is not None:
-            df_base_atualizada['código'] = df[coluna_codigo].astype(str).str.replace(r'\D+', '', regex=True)
+            df_base_atualizada['código'] = df[coluna_codigo].astype(
+                str).str.replace(r'\D+', '', regex=True)
         else:
             df_base_atualizada['código'] = ''
 
@@ -120,7 +123,8 @@ def tratar_tabela(caminho_arquivo):
                 lambda x: format_currency(x) if pd.notnull(x) else '')
 
         # Renomeia as colunas padrão
-        colunas_padrao = ['Índice', 'Porte', 'código', 'mnemônico', 'Filme', 'Efetua', 'ch', 'VlrPorte']
+        colunas_padrao = ['Índice', 'Porte', 'código',
+                          'mnemônico', 'Filme', 'Efetua', 'ch', 'VlrPorte']
         for col in colunas_padrao:
             if col not in df_base_atualizada.columns:
                 df_base_atualizada[col] = None
@@ -130,22 +134,24 @@ def tratar_tabela(caminho_arquivo):
         df_base_atualizada['Porte'] = 'UNIL'
         df_base_atualizada['Filme'] = 0
         df_base_atualizada['Efetua'] = 'S'
-        df_base_atualizada['VlrPorte'] = 1      
-
+        df_base_atualizada['VlrPorte'] = 1
 
         # Adiciona os dados da tabela base atualizada na tabela final
-        df_final = pd.concat([df_final, df_base_atualizada[['código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico', 'Efetua', 'VlrPorte']]], ignore_index=True)
+        df_final = pd.concat([df_final, df_base_atualizada[[
+                             'código', 'Índice', 'Porte', 'ch', 'Filme', 'mnemônico', 'Efetua', 'VlrPorte']]], ignore_index=True)
 
-
-    # Remove os 0 a mais que possam ser adicionados nos códigos
+   # Remove os 0 a mais que possam ser adicionados nos códigos
     if 'código' in df_final.columns:
-        df_final['código'] = df_final['código'].astype(str).str.rstrip('0').str.ljust(8, '0').replace('nan00000', '')
+        df_final['código'] = df_final['código'].astype(
+            str).str.replace('(\.0+)|(nan)', '', regex=True)
+        df_final['código'] = df_final['código'].apply(lambda x: x.zfill(
+            10) if len(x) == 10 else x.zfill(8) if len(x) == 8 else x)
     else:
         df_final['código'] = None
 
-
     # Remove linhas vazias da tabela final
-    df_final = df_final.dropna(how='all', subset=['código', 'mnemônico', 'ch']).reset_index(drop=True)
+    df_final = df_final.dropna(
+        how='all', subset=['código', 'mnemônico', 'ch']).reset_index(drop=True)
 
     # Mostra um preview do DataFrame tratado
     st.subheader('Tabela Tratada')
@@ -165,6 +171,8 @@ def tratar_tabela(caminho_arquivo):
     st.markdown(href, unsafe_allow_html=True)
 
 # Função para formatar o valor da coluna "ch", tirando as letras, $ e com 2 casas decimais
+
+
 def format_currency(value):
     if pd.notnull(value):
         value = str(value)
@@ -176,6 +184,7 @@ def format_currency(value):
         except ValueError:
             pass
     return value
+
 
 # Chama a função para aplicar o estilo
 local_css('style.css')
