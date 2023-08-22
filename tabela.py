@@ -52,10 +52,10 @@ def tratar_tabela(caminho_arquivo):
         st.warning(f"Erro ao carregar o arquivo: {str(e)}")
         return
 
-    # Obtém a lista de nomes de abas (sheets) no arquivo
+    # Puxa a lista de nomes de abas (sheets) no arquivo
     nomes_abas = wb.sheetnames
 
-    # Verifica se há abas no arquivo
+    # Verifica se existem abas no arquivo
     if len(nomes_abas) == 0:
         st.warning('Nenhuma aba encontrada no arquivo.')
         return
